@@ -1,205 +1,426 @@
-# Password Protection Lab
+# Lab: Password Protection
 
-## Introduction
+## Overview
 
-In this lab, you'll implement a secure authentication system that uses password hashing,
-sessions, and route access control to manage user login and logout. This brings together
-all the concepts you’ve learned about authentication so far, but with a critical
-enhancement: users will now verify their identity using a password, and that password
-will be safely hashed and stored in the database.
+A full-stack authentication application built using Flask, Flask-RESTful, SQLAlchemy, Flask-Bcrypt, Marshmallow, and React
 
-Plaintext password storage is one of the most dangerous vulnerabilities in any web
-application. Instead of storing passwords directly, we’ll use Flask-Bcrypt to generate
-one-way encrypted hashes, which can be validated without ever revealing the original
-password.
+This project demonstrates secure user authentication through password hashing, session management, and RESTful API endpoints
 
-You’ll build the full login workflow: signing up new users, verifying credentials on login,
-checking whether a session is active, and logging users out. All of this will happen on the
-Flask backend, while the provided React frontend will automatically reflect the user’s
-authenticated state.
+Users can register an account, log in with their credentials, maintain an authenticated session, and securely log out
 
-By the end of this lab, you’ll have implemented a secure, production-ready authentication
-system using password hashing and session-based login—essential skills for any backend
-developer working on user-facing applications.
+The Flask backend handles authentication and database operations, while the provided React frontend manages the user interface
 
-## Tools & Resources
+## Technologies Used
 
-- [GitHub Repo](https://github.com/learn-co-curriculum/flask-password-protection-lab)
-- [Flask-Bcrypt](https://flask-bcrypt.readthedocs.io/en/1.0.1/)
+### Backend
+- Python
+- Flask
+- Flask-RESTful
+- Flask-SQLAlchemy
+- Flask-Bcrypt
+- Flask-Migrate
+- Marshmallow
+- SQLite
 
-## Set Up
+### Frontend
+- React
+- JavaScript
+- HTML
+- CSS
 
-There is some starter code in place for a Flask API backend and a React frontend.
-To get set up, run:
+### Development and Testing
+- Pipenv
+- Pytest
+- Git and GitHub
 
-```console
-$ pipenv install && pipenv shell
-$ npm install --prefix client
-$ cd server
-$ flask db upgrade head
+## Features
+
+### Secure Password Hashing
+- Passwords are hashed using Flask-Bcrypt before being stored in the database
+- Plaintext passwords are never stored in the database
+- Direct access to the public `password_hash` property raises an exception
+- Passwords are verified against their stored hashes during login
+
+### User Registration
+- Creates new users using a username and password
+- Automatically hashes passwords before database insertion
+- Automatically authenticates users after successful registration
+- Returns serialized user information without exposing password hashes
+
+### User Login
+- Authenticates existing users using their username and password
+- Uses Bcrypt to verify supplied credentials
+- Stores authenticated user IDs in Flask sessions
+- Rejects invalid credentials with HTTP 401
+
+### Session Management
+- Maintains user authentication using Flask sessions
+- Verifies whether a user has an active authenticated session
+- Returns authenticated user information when a valid session exists
+- Allows users to log out by clearing their session ID
+
+## Project Structure
+
+The primary application files include:
+
+```text
+flask-password-protection-lab/
+├── client/                 # React frontend
+├── server/
+│   ├── app.py              # Flask API resources and routes
+│   ├── config.py           # Flask application and extension configuration
+│   ├── models.py           # User model and Marshmallow schema
+│   └── migrations/         # Database migration files
+├── testing/                # Automated test suite
+├── Pipfile                 # Python dependencies
+├── Pipfile.lock            # Locked Python dependencies
+├── package.json            # Frontend dependency configuration, if present
+├── test_suite.png          # Screenshot of successful tests
+└── README.md               # Project documentation
 ```
 
-You can work on this lab by running the tests with `pytest -x`. It will also be
-helpful to see what's happening during the request/response cycle by running the
-app in the browser. You can run the Flask server with:
+## Installation and Setup
 
-```console
-$ python app.py
-```
+### Prerequisites
 
-And you can run React in another terminal with:
+Ensure the following are installed:
 
-```console
-$ npm start --prefix client
-```
+- Python
+- Pipenv
+- Node.js
+- npm
+- Git
 
-You don't have to make any changes to the React code to get this lab working.
-
-## Instructions
-
-### Task 1: Define the Problem
-
-Our app has three pages:
-
-1. A signup page, where the user enters their username, password, and password
-   confirmation.
-2. A login page, where the user submits their username and password and are then
-   logged in.
-3. A user homepage, which says, "Welcome, ${username}!"
-
-Users should not be able to log in if they enter an incorrect password.
-
-> **Note: we're not covering password validations in this lab, so don't worry
-> about those. Password validation is hard to get right anyway — it's
-> surprisingly easy to produce rules that decrease password security rather than
-> enhance it.**
-
-### Task 2: Determine the Design
-
-We need to implement a way for users to sign up, log in, and log out with secure
-passwords.
-
-To complete the lab and get the tests passing, you will need to:
-
-- Add methods to the User model to protect and set the password_hash property and
-  authenticate a user with their password.
-
-- Create a `Signup` resource with a `post()` method that responds to a
-  `POST /signup` request. It should: create a new user; save their hashed
-  password in the database; save the user's ID in the session object; and return
-  the user object in the JSON response.
-
-- Create a `CheckSession` resource with a `get()` method that responds to a
-  `GET /check_session` request. If the user is authenticated, return the user
-  object in the JSON response. Otherwise, return an empty response with a 204
-  status code.
-
-- Create a `Login` resource with a `post()` method for logging in that
-  responds to a `POST /login` request and returns the user as JSON.
-  
-- Create a `Logout` resource with a `delete()` method for logging out
-  that responds to a `DELETE /logout` request.
-
-### Task 3: Develop, Test, and Refine the Code
-
-#### Step 1: Protect the `password_hash` Property
-
-In the User model, add logic to protect the password_property by raising an Exception.
-
-```python
-# Build method to protect password_hash property
-@hybrid_property
-def password_hash(self):
-    pass
-```
-
-#### Step 2: Use Bcrypt to Hash the Password
-
-In the User model, use `bcrypt.generate_password_hash` to set the property.
-
-```python
-# Build method to set password hash property using bcrypt.generate_password_hash()
-@password_hash.setter
-def password_hash(self, password):
-    pass
-```
-
-#### Step 3: Use Bcrypt to Authenticate a User
-
-In the User model, use `bcrypt.check_password_hash` to verify a user's password.
-
-```python
-# Build authenticate method that uses bcrypt.check_password_hash()
-def authenticate(self, password):
-    pass
-```
-
-There are no tests for these methods, but you can verify they're set up properly by
-using `flask shell` and creating some users.
-
-Once you have all methods created, commit your code.
-
-#### Step 4: Create Signup Endpoint
-
-Create `POST /signup` endpoint. Implement the following:
-- Create a new user. 
-- Save user to db with their hashed password using bcrypt.
-- Log the user in with sessions.
-- Return the user object.
-
-Test your logic with `pytest` and commit your code.
-
-#### Step 5: Create Check Session Endpoint
-
-Create `GET /check_session` endpoint. Implement the following:
-- If the user is authenticated, return the user object in the JSON response. 
-- Else, return an empty response with a 204 status code.
-
-Test your logic with `pytest` and commit your code.
-
-#### Step 6: Create Login Endpoint
-
-Create `POST /login` endpoint. Implement the following:
-- Log the user in with sessions.
-- Returns the user as JSON.
-
-Test your logic with `pytest` and commit your code.
-
-#### Step 7: Create Logout Endpoint
-  
-Create `DELETE /logout` endpoint. Implement the following:
-- Log the user out with sessions.
-
-Test your logic with `pytest` and commit your code.
-
-#### Step 8: Commit and Push Git History
-
-Once all tests are passing, `git commit` (if needed) and `git push` your final code
-to GitHub:
+### 1. Clone the Repository
 
 ```bash
-git add .
-git commit -m "final solution"
-git push
+git clone https://github.com/Matt20Swanberg/flask-password-protection-lab
+cd flask-password-protection-lab
 ```
 
-If you created a separate feature branch, remember to open a PR on main and merge.
+### 2. Install Python Dependencies
 
-### Task 4: Document and Maintain
+From the project root:
 
-Optional Best Practice documentation steps:
-* Add comments to the code to explain purpose and logic, clarifying intent and 
-functionality of your code to other developers.
-* Update README text to reflect the functionality of the application following 
-https://makeareadme.com. 
-  * Add screenshot of completed work included in Markdown in README.
-* Delete any stale branches on GitHub
-* Remove unnecessary/commented out code
-* If needed, update git ignore to remove sensitive data
+```bash
+pipenv install
+pipenv shell
+```
 
-## Submit your solution
+### 3. Install Frontend Dependencies
 
-CodeGrade will use the same test suite as the test suite included.
+```bash
+npm install --prefix client
+```
 
-Once all tests are passing, commit and push your work using `git` to submit to 
-CodeGrade through Canvas.
+### 4. Apply Database Migrations
+
+Navigate to the server directory:
+
+```bash
+cd server
+flask db upgrade head
+```
+
+### 5. Start the Flask Backend
+
+From the `server` directory:
+
+```bash
+python app.py
+```
+
+The Flask development server runs at:
+
+```text
+http://127.0.0.1:5555
+```
+
+### 6. Start the React Frontend
+
+Open a separate terminal and navigate to the project root
+
+Run:
+
+```bash
+npm start --prefix client
+```
+
+The React frontend provides the signup, login, and authenticated user interfaces
+
+## Database Model
+
+### User Model
+
+The `User` model represents registered users and stores authentication information
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | Integer | Primary key |
+| `username` | String | User's username |
+| `_password_hash` | String | Bcrypt-hashed password |
+
+### Password Protection
+
+The model implements three password-related methods:
+
+**`password_hash` getter**
+- Prevents direct access to the password hash through the public property
+- Raises an exception when accessed
+
+**`password_hash` setter**
+- Generates a secure password hash using Bcrypt
+- Converts the generated hash into a UTF-8 string
+- Stores the resulting hash in `_password_hash`
+
+**`authenticate(password)`**
+- Compares a supplied password against the stored hash
+- Returns `True` when the password matches
+- Returns `False` when the password is incorrect
+
+### User Serialization
+
+The `UserSchema` Marshmallow schema serializes user objects into JSON
+
+Only the following fields are included:
+
+- `id`
+- `username`
+
+Password hashes are excluded from serialized API responses
+
+## API Endpoints
+
+### POST /signup
+
+Creates a new user and automatically establishes an authenticated session
+
+**Request Body**
+
+```json
+{
+  "username": "ash",
+  "password": "pikachu"
+}
+```
+
+**Successful Response — 201 Created**
+
+```json
+{
+  "id": 1,
+  "username": "ash"
+}
+```
+
+**Functionality**
+- Retrieves the username and password from the request
+- Creates a new `User` instance
+- Hashes the password using the model's password setter
+- Saves the user to the database
+- Stores the new user's ID in the Flask session
+- Returns serialized user data
+
+### POST /login
+
+Authenticates an existing user using their username and password
+
+**Request Body**
+
+```json
+{
+  "username": "ash",
+  "password": "pikachu"
+}
+```
+
+**Successful Response — 200 OK**
+
+```json
+{
+  "id": 1,
+  "username": "ash"
+}
+```
+
+**Failed Response — 401 Unauthorized**
+
+```json
+{
+  "message": "Invalid username or password"
+}
+```
+
+**Functionality**
+- Retrieves the supplied login credentials
+- Queries the database for the requested username
+- Verifies the password using `authenticate()`
+- Stores the user's ID in the session after successful authentication
+- Rejects invalid credentials
+
+### GET /check_session
+
+Checks whether the current user has an active authenticated session
+
+**Successful Response — 200 OK**
+
+```json
+{
+  "id": 1,
+  "username": "ash"
+}
+```
+
+**Unauthenticated Response — 204 No Content**
+
+Returns an empty response body
+
+**Functionality**
+- Retrieves the user ID from the current Flask session
+- Queries the database for the associated user
+- Confirms that the user exists
+- Returns serialized user information when authenticated
+- Returns HTTP 204 when no valid authenticated user exists
+
+### DELETE /logout
+
+Logs out the currently authenticated user
+
+**Successful Response — 204 No Content**
+
+Returns an empty response body
+
+**Functionality**
+- Clears the authenticated user's ID from the Flask session
+- Returns HTTP 204 after logout
+
+### DELETE /clear
+
+Clears stored session information
+
+**Successful Response — 204 No Content**
+
+Returns an empty response body
+
+**Functionality**
+- Resets the `page_views` session value
+- Clears the authenticated user's ID
+- Returns HTTP 204
+
+## Authentication Workflow
+
+### Registration
+
+1. The user submits a username and password through the signup form
+2. Flask retrieves the submitted credentials
+3. A new `User` instance is created
+4. Bcrypt generates a secure hash of the supplied password
+5. The user is saved to the database
+6. The user's database ID is stored in the Flask session
+7. The backend returns the serialized user with HTTP 201
+
+### Login
+
+1. The user submits their username and password
+2. Flask searches the database for the matching username
+3. The `authenticate()` method verifies the supplied password
+4. Successful authentication stores the user's ID in the session
+5. The backend returns the serialized user with HTTP 200
+6. Invalid credentials return HTTP 401
+
+### Session Verification
+
+1. The frontend requests `/check_session`
+2. Flask retrieves the user ID from the session
+3. The database is queried for the associated user
+4. A valid user is returned with HTTP 200
+5. An invalid or missing session returns HTTP 204
+
+### Logout
+
+1. The frontend sends a DELETE request to `/logout`
+2. Flask clears the authenticated user ID from the session
+3. The backend returns HTTP 204
+4. Subsequent session checks no longer identify an authenticated user
+
+## Testing
+
+Automated tests are provided to verify the authentication endpoints
+
+### Running the Tests
+
+From the `server` directory, run:
+
+```bash
+pytest -v
+```
+
+To stop testing after the first failure:
+
+```bash
+pytest -x -v
+```
+
+### Test Coverage
+
+The provided test suite verifies the following functionality:
+
+| Test | Description | Result |
+|------|-------------|--------|
+| Signup | Creates a user with a hashed password | Passed |
+| Login | Authenticates a user using valid credentials | Passed |
+| Logout | Clears the authenticated user's session | Passed |
+| Check Session | Retrieves the authenticated user from the session | Passed |
+
+### Final Test Results
+
+All four automated tests passed successfully
+
+```text
+4 passed
+```
+
+## Screenshots
+
+### Automated Test Suite
+
+The following screenshot demonstrates the successful execution of the provided Pytest test suite
+
+![Test Suite Results](/screenshot/test_suite.png)
+
+## Security Considerations
+
+This project demonstrates several important authentication practices:
+
+- Passwords are hashed before being stored in the database
+- Plaintext passwords are not persisted
+- Password verification is performed using Bcrypt
+- Password hashes are excluded from API responses
+- Authentication sessions store user IDs rather than passwords
+- Login requests with invalid credentials are rejected
+- Logout clears the authenticated user's session ID
+- Session verification confirms that the referenced user exists in the database
+
+### Additional Considerations
+
+This application is intended for educational and local development purposes
+
+A production deployment would require additional security measures, including secure session cookie configuration, HTTPS, CSRF protection where applicable, input validation, and login rate limiting
+
+## Learning Objectives
+
+This lab demonstrates how to:
+
+- Implement secure password hashing using Flask-Bcrypt
+- Protect password-related model properties
+- Authenticate users using hashed passwords
+- Create RESTful signup and login endpoints
+- Manage authenticated users through Flask sessions
+- Implement session verification and logout functionality
+- Serialize SQLAlchemy models using Marshmallow
+- Test authentication endpoints using Pytest
+
+
+## Author
+
+Created by Matthew Swanberg as part of Course 10 Module 3 (Lab: Password Protection)
